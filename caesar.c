@@ -28,3 +28,4 @@ char caesar(char ch, int k){
 	if(ch>='A' && ch<='Z'){return((ch+k<='Z'?ch+k:ch+k-26));}
 	else if(ch>='a' && ch<='z'){return((ch+k<='z'?ch+k:ch+k-26));}	
 	return ch;
+}
