@@ -158,43 +158,48 @@ int main(int argc, char* argv[])
             bool dot=false,hdr=false;
             regex_t regex;
             printf("%s\n",y);
-            regcomp(&regex, "^/[a-zA-Z0-9^\\s/]\\+\\.[a-zA-Z0-9^\\s]\\+\\($\\|\\(?[a-zA-Z0-9/=^\\s]\\+\\)\\)",0);
+            regcomp(&regex, "^/[a-zA-Z0-9^\\s/]\\+\\.[a-zA-Z0-9^\\s]\\+\\(?[a-zA-Z0-9/=^\\s]\\+\\)\\?",0);
             if(regexec(&regex,y,0,NULL,0)!=0){error(400);printf("err regex\n");};
-            printf("regex success");
+            printf("regex success\n");
             while(y++){
-            
-            
-            
-            
-            if(*y==0)break;
+           if(*y==0)break;
                 if(*y=='\x20'){error(400);printf("err y\n");}
                 if(*y == '.'){dot=true;}
                 if(*y == '?'){hdr=true;}
             }
             if(!dot){error(501);printf("err dot\n");}
             printf("%s\n",x);
-            if(strcmp(x, "GET")!=0){error(405);printf("err get\n");}
+            if(strcasecmp("GET", x)!=0){error(405);printf("err get\n");}
+            printf("x success\n");
             if(strcmp(z, "HTTP/1.1")!=0){error(505);printf("err http\n");}
+            printf("valid success\n");
             y=ytmp;
-            printf("valid success");
+            
             // TODO: extract query from request-target
             char* query = malloc(10);
             query[0] = '\0';
             if(hdr){
                 strcpy(query,strchr(y,'?')+1);
             }
+            printf("query success\n");
             // TODO: concatenate root and absolute-path
 
             char* path = malloc(strlen(root)+strlen(y)-strlen(query));
+            printf("1malloc success\n");
             strcpy(path,root);
             char* rpath = malloc(strlen(y)-strlen(query));
-            strncpy(rpath,y,(int)(strchr(y,'?')-y));
+            printf("2malloc success\n");
+            strncpy(rpath,y,strlen(y)-strlen(query)-hdr);
+            rpath[strlen(y)-strlen(query)]=0;
+            printf("%s rpath\n",rpath);
+            printf("before strcat success\n");
             strcat(path, rpath);
+            
             printf("%s\n",path);
-
+            printf("path success\n");
             // TODO: ensure path exists
             FILE* fl = fopen(path,"r");
-            if(fl==NULL){error(404);}
+            if(fl==NULL){error(404);printf("path 404\n");}
             
             char bufa[10];
             // TODO: ensure path is readable
@@ -204,13 +209,18 @@ int main(int argc, char* argv[])
             char* end;
             char* extension;
             end=strchr(ytmp,'?');
+            
             if(end!=NULL){
             printf("%i strchr\n",end-strchr(ytmp,'.')-1);
             extension = malloc(end-strchr(ytmp,'.'));
                 strncpy(extension,strchr(ytmp,'.')+1,end-strchr(ytmp,'.')-1);
                 extension[end-strchr(ytmp,'.')-1] = '\0';
             }else{
-            extension = malloc(5);
+            end = strchr(ytmp,'\0');
+            printf("%i strchr\n",end-strchr(ytmp,'.')-1);
+            extension = malloc(end-strchr(ytmp,'.'));
+                strncpy(extension,strchr(ytmp,'.')+1,end-strchr(ytmp,'.'));
+                extension[end-strchr(ytmp,'.')] = '\0';
             }
             
             
@@ -296,6 +306,28 @@ int main(int argc, char* argv[])
                 }
 
                 // TODO: respond to client
+                
+                if (dprintf(cfd, "HTTP/1.1 200 OK\r\n") < 0)
+                {
+                    continue;
+                }
+                if (dprintf(cfd, "Connection: close\r\n") < 0)
+                {
+                    continue;
+                }
+                if (dprintf(cfd, "Content-Length: %i\r\n", length) < 0)
+                {
+                    continue;
+                }
+                if (dprintf(cfd, "Content-Type: %s\r\n\r\n", type) < 0)
+                {
+                    continue;
+                }
+                if (write(cfd, body, length) == -1)
+                {
+                    continue;
+                }
+                
             }
             
             // announce OK
@@ -497,26 +529,26 @@ void handler(int signal)
 const char* lookup(const char* extension)
 {
     char *p = (char*)extension;
-    for ( ; *p; ++p) *p = tolower(*p);
-    if(strcmp(p,"css")==0){
+    
+    if(strcasecmp(p,"css")==0){
         return "text/css";
     }
-    if(strcmp(p,"html")==0){
+    if(strcasecmp(p,"html")==0){
         return "text/html";
     }
-    if(strcmp(p,"gif")==0){
+    if(strcasecmp(p,"gif")==0){
         return "image/gif";
     }
-    if(strcmp(p,"jpg")==0){
+    if(strcasecmp(p,"jpg")==0){
         return "image/jpeg";
     }
-    if(strcmp(p,"ico")==0){
+    if(strcasecmp(p,"ico")==0){
         return "image/x-icon";
     }
-    if(strcmp(p,"js")==0){
+    if(strcasecmp(p,"js")==0){
         return "text/javascript";
     }
-    if(strcmp(p,"png")==0){
+    if(strcasecmp(p,"png")==0){
         return "image/png";
     }
     return NULL;
